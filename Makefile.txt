@@ -1,0 +1,12 @@
+PROJECTNAME = CameraApp
+OUTPUTDIR = build
+INCLUDE_DIRS = -Iinclude/opencv2 -Iinclude/boost -Iinclude/GLFW
+LIB_DIRS = -Llib
+
+LIBS = -lopengl32.lib -lglfw3.lib -lopencv_world490.lib -llibboost_filesystem-vc143-mt-x64-1_85.lib
+
+SRC = $(wildcard src/*.cpp) $(wildcard imgui/*.cpp)
+
+default:
+	g++ $(SRC) -o $(OUTPUT_DIR)/$(PROJECTNAME) $(INCLUDE_DIRS) $(LIB_DIRS) $(LIBS)
+
