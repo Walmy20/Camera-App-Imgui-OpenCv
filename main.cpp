@@ -1,3 +1,4 @@
+#define _CRT_SECURE_NO_WARNINGS // need it to use getenv()
 #include <iostream>
 #include <string>
 #include <cstdio>
@@ -7,7 +8,6 @@
 #include <fstream>
 #include <sstream>
 #include <map>
-#include <mutex>
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
@@ -15,6 +15,7 @@
 #include <stdio.h>
 #include <boost/process.hpp>
 #include <boost/filesystem.hpp>
+#include <boost/process/windows.hpp>
 #include <imfilebrowser.h> //https://github.com/AirGuanZ/imgui-filebrowser/tree/master  need C++ 17  
 
 
@@ -29,16 +30,16 @@
 #endif
 
 #ifdef _WIN32
-    #define PATH_SEPARATOR "\\"
+#define PATH_SEPARATOR "\\"
 #else
-    #define PATH_SEPARATOR "/"
+#define PATH_SEPARATOR "/"
 #endif
 
 using namespace cv;
 using namespace std;
 namespace bp = boost::process;
 namespace fs = boost::filesystem;
-//mutex mtx; // Just in case I need to use it.
+
 
 string resource_path(string relative_path) {
     string base_path;
@@ -55,11 +56,7 @@ string resource_path(string relative_path) {
 }
 
 pair<map<string, vector<string>>, vector<string>> read_rtsp_links(string& filename) {
-    // Prompt the user for a filename
-
-    // To be replace by ImGui FileDialog
-    /*cout << "Enter the file path: ";
-    getline(cin, filename);*/
+    // Prompt the user for a filename using the ImGui file browser
 
     map<string, vector<string>> groups;
     vector<string> group_names;
@@ -73,7 +70,7 @@ pair<map<string, vector<string>>, vector<string>> read_rtsp_links(string& filena
     // Read the column titles (group names)
     getline(file, line);
     stringstream ss(line);
-    
+
     string group_name;
     while (getline(ss, group_name, ',')) {  // Split line by comma character
         group_names.push_back(group_name);
@@ -102,7 +99,7 @@ pair<map<string, vector<string>>, vector<string>> read_rtsp_links(string& filena
 
 string get_codec(string camera) {
     //string gst_launch_path = "C:\\gstreamer\\1.0\\msvc_x86_64\\bin\\gst-launch-1.0.exe";
-    
+
     fs::path gstreamer_path_env = "C:" PATH_SEPARATOR "gstreamer" PATH_SEPARATOR "1.0" PATH_SEPARATOR "msvc_x86_64" PATH_SEPARATOR "bin" PATH_SEPARATOR "gst-launch-1.0.exe";
 
     string gst_launch_path;
@@ -122,7 +119,7 @@ string get_codec(string camera) {
 
     // Start a new process
     bp::ipstream pipe_stream;
-    bp::child c(command, bp::std_out > pipe_stream);
+    bp::child c(command, bp::std_out > pipe_stream, bp::windows::create_no_window);
 
     // Read the output of the child process
     string line;
@@ -177,7 +174,7 @@ VideoCapture set_cap_high(string camera, string codec) {
     return set_cap(camera, codec, 640, 480);
 }
 
-void process_cameras(string camera, Mat& frame,Mat& rgb_frame, GLuint& texture, atomic<bool>& stop_threads, bool& full_screen_mode) {
+void process_cameras(string camera, Mat& frame, Mat& rgb_frame, GLuint& texture, atomic<bool>& stop_threads, bool& full_screen_mode) {
     // Using Gstreamer
     string codec = get_codec(camera);
 
@@ -204,7 +201,7 @@ void process_cameras(string camera, Mat& frame,Mat& rgb_frame, GLuint& texture, 
 
     while (!stop_threads) { // Check the flag to run this loop
         cap >> frame;  // Read a frame from the pipeline
-        
+
         if (frame.empty()) {
             cout << "End of video stream. Frame is empty from this link: " << camera << endl;
             rgb_frame = Mat::zeros(Size(640, 480), CV_8UC3);
@@ -215,8 +212,9 @@ void process_cameras(string camera, Mat& frame,Mat& rgb_frame, GLuint& texture, 
         if (full_screen_mode) {
             cvtColor(frame, rgb_frame, COLOR_BGR2RGB);
             cap.set(CAP_PROP_BUFFERSIZE, 2);
-        } else {
-            
+        }
+        else {
+
             // Resize the frame to 640x480 for testing without Gstreamer until I figure it out
             resize(frame, frame, Size(640, 480), 0, 0, INTER_LINEAR);
 
@@ -335,11 +333,11 @@ void fileSelector(ImGui::FileBrowser& fileDialog, string& filename, map<string, 
     fileDialog.SetTypeFilters({ ".*" });
 
     ImGui::Begin("File Selector", NULL, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
-    
-        // open file dialog when user clicks this button
-        if (ImGui::Button("Open File Browser"))
-            fileDialog.Open();
-    
+
+    // open file dialog when user clicks this button
+    if (ImGui::Button("Open File Browser"))
+        fileDialog.Open();
+
     ImGui::End();
 
     fileDialog.Display();
@@ -356,14 +354,14 @@ void fileSelector(ImGui::FileBrowser& fileDialog, string& filename, map<string, 
     }
 }
 
-void fullScreen(GLFWwindow* window,int window_width, int window_height, bool& full_screen_mode, bool& show_back_button, bool& show_group_bar, bool& show_quadrants, bool& camera_starter, vector<string>& cameras, int& selectedCamera, vector<Mat>& frames, vector<Mat>& rgb_frames, vector<thread>& threads, atomic<bool>& stop_threads, vector<GLuint>& textures) {
+void fullScreen(GLFWwindow* window, int window_width, int window_height, bool& full_screen_mode, bool& show_back_button, bool& show_group_bar, bool& show_quadrants, bool& camera_starter, vector<string>& cameras, int& selectedCamera, vector<Mat>& frames, vector<Mat>& rgb_frames, vector<thread>& threads, atomic<bool>& stop_threads, vector<GLuint>& textures) {
     if (!full_screen_mode) return;
 
     // Displaying full screen
     ImGui::SetNextWindowPos(ImVec2(0, 0));
     ImGui::SetNextWindowSize(ImVec2(window_width, window_height));
     ImGui::Begin("Full Screen Camera", NULL, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
-    //ImGui::Image((void*)(intptr_t)textures[0], ImVec2(window_width, window_height));
+    
     // Update texture for the full-screen mode
     glBindTexture(GL_TEXTURE_2D, textures[0]);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -381,7 +379,7 @@ void fullScreen(GLFWwindow* window,int window_width, int window_height, bool& fu
     // Check if the mouse is at the top of the screen
     double mouse_x, mouse_y;
     glfwGetCursorPos(window, &mouse_x, &mouse_y);
-    
+
     if (mouse_y <= 25) // adjust this value as needed
     {
         show_back_button = true;
@@ -425,7 +423,12 @@ void fullScreen(GLFWwindow* window,int window_width, int window_height, bool& fu
 }
 
 // Main code
-int main(int, char**)
+int WinMain(
+               HINSTANCE hInstance,
+               HINSTANCE hPrevInstance,
+               LPSTR     lpCmdLine,
+               int       nShowCmd
+)
 {
     glfwSetErrorCallback(glfw_error_callback);
     if (!glfwInit())
@@ -436,7 +439,7 @@ int main(int, char**)
     vector<string> groupNames;
     string selectedGroupName;
     vector<string> cameras;
-    vector<Mat> frames(6); 
+    vector<Mat> frames(6);
     vector<Mat> rgb_frames(6);
     vector<thread> threads;
     vector<GLuint> textures(6);
@@ -452,18 +455,13 @@ int main(int, char**)
     bool show_quadrants = true;
     atomic<bool> stop_threads(false); // Flag for stopping all camera feed and starting new one
 
-
-
     // GL 3.0 + GLSL 130
     const char* glsl_version = "#version 130";
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
-    //glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);  // 3.2+ only
-    //glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);            // 3.0+ only
-
 
     // Create window with graphics context
-    
+
     // Get the primary monitor
     GLFWmonitor* monitor = glfwGetPrimaryMonitor();
 
@@ -509,8 +507,8 @@ int main(int, char**)
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init(glsl_version);
 
-    io.Fonts->AddFontFromFileTTF("../../misc/fonts/DroidSans.ttf", 16.0f);
-
+    //io.Fonts->AddFontFromFileTTF("../../misc/fonts/DroidSans.ttf", 16.0f);
+    io.Fonts->AddFontFromFileTTF("../../misc/fonts/Roboto-Medium.ttf", 16.0f);
     // Our state
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
@@ -520,7 +518,7 @@ int main(int, char**)
     // Getting the window width and height for setting up other windows
     int window_width, window_height;
     glfwGetWindowSize(window, &window_width, &window_height);
-    
+
     // create a file browser instance
     ImGui::FileBrowser fileDialog;
 
@@ -532,7 +530,7 @@ int main(int, char**)
     while (!glfwWindowShouldClose(window))
     {
         glfwPollEvents();
-        
+
         // Start the Dear ImGui frame
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
@@ -581,7 +579,7 @@ int main(int, char**)
             selectedGroupName = groupNames[selectedGroup];
 
 
-            // need to call this everytime I exit out of full screen as well
+            // Need to call this everytime I exit out of full screen as well hence the if (show_quadrants) is need it
             // Starting the cameras One time in the loop
             if (show_quadrants) {
                 if (camera_starter) {
@@ -597,9 +595,6 @@ int main(int, char**)
                     camera_starter = false;
                 }
             }
-            //////////////////////////////////////////////// new stuff down here
-
-
 
             if (full_screen_mode) {
                 if (show_single_camera) {
@@ -619,7 +614,7 @@ int main(int, char**)
                     show_single_camera = false; // Ensure this only happens once
                 }
                 // Show the selected camera in full screen
-                fullScreen(window, window_width, window_height, full_screen_mode, show_back_button, show_group_bar,show_quadrants, camera_starter, cameras, selectedCamera, frames, rgb_frames, threads, stop_threads, textures);
+                fullScreen(window, window_width, window_height, full_screen_mode, show_back_button, show_group_bar, show_quadrants, camera_starter, cameras, selectedCamera, frames, rgb_frames, threads, stop_threads, textures);
             }
 
             if (show_quadrants) {
@@ -647,7 +642,7 @@ int main(int, char**)
 
                     // Display the texture in the ImGui window
                     ImGui::Image(reinterpret_cast<void*>(static_cast<intptr_t>(textures[i])), ImVec2(rgb_frames[i].cols, rgb_frames[i].rows));
-                    
+
                     if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0)) {
                         // Set flag to initiate full screen mode handling
                         selectedCamera = i;
@@ -655,14 +650,14 @@ int main(int, char**)
                         show_back_button = true;
                         show_group_bar = false;
                         show_quadrants = false;
-                    
+
                     }
                     ImGui::End();
                 }
             }
 
         }
- 
+
         // Rendering
         ImGui::Render();
         int display_w, display_h;
