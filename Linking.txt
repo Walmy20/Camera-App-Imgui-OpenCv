@@ -1,4 +1,4 @@
-Release mode and x64
+Release mode and x64 c++17
 
 C:\Opencv\build\install\include
 C:\Boost\boost_1_85_0
