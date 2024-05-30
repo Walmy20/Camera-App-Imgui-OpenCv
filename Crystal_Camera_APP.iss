@@ -19,7 +19,7 @@ DefaultDirName={autopf}\{#MyAppName}
 ChangesAssociations=yes
 DisableProgramGroupPage=yes
 ; Remove the following line to run in administrative install mode (install for all users.)
-PrivilegesRequired=lowest
+; PrivilegesRequired=lowest
 OutputBaseFilename=mysetup_camera_app
 Compression=lzma
 SolidCompression=yes
@@ -33,11 +33,14 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 
 [Files]
 Source: "C:\Users\walmym\Desktop\Camera Application\CameraApp\x64\Release\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\Users\walmym\Desktop\Downloads\gstreamer-1.0-msvc-x86_64-1.22.9.msi"; DestDir: "{tmp}"; Flags: deleteafterinstall
+Source: "C:\Users\walmym\Desktop\Downloads\gstreamer-1.0-devel-msvc-x86_64-1.22.9.msi"; DestDir: "{tmp}"; Flags: deleteafterinstall
+Source: "C:\Users\walmym\Desktop\Camera Application\Cameras.csv"; DestDir: "{app}/cameras";
+Source: "C:\Opencv\build\install\x64\vc17\bin\*.dll"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 ;Source: "C:\Users\walmym\Desktop\Camera Application\Logo.ico"; DestDir: "{app}"; Flags: ignoreversion
 ;Source: "C:\Users\walmym\Desktop\Camera Application\imgui\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 ;Source: "C:\Windows\System32\msvcp140.dll"; DestDir: "{app}"; Flags: ignoreversion
 ; Source: "C:\Opencv\build\install\x64\vc17\bin\*.dll"; DestDir: "{app}\libs"
-Source: "C:\Opencv\build\install\x64\vc17\bin\*.dll"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 ;Source: "C:\gstreamer\*"; DestDir: "{app}/gstreamer"; Flags: ignoreversion recursesubdirs createallsubdirs
 ;Source: "C:\Users\walmym\Desktop\Camera Application\backends\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
@@ -54,4 +57,12 @@ Name: "{autoprograms}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
 Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
 
 [Run]
+;Filename: "msiexec.exe"; Parameters: "/i ""{tmp}\gstreamer-1.0-msvc-x86_64-1.22.9.msi"" /quiet /norestart"; StatusMsg: "Installing GStreamer..."; Flags: waituntilterminated
+;Filename: "msiexec.exe"; Parameters: "/i ""{tmp}\gstreamer-1.0-devel-msvc-x86_64-1.22.9.msi"" /quiet /norestart"; StatusMsg: "Installing GStreamer dev..."; Flags: waituntilterminated
+
+Filename: "msiexec.exe"; Parameters: "/i ""{tmp}\gstreamer-1.0-msvc-x86_64-1.22.9.msi"" /norestart"; StatusMsg: "Installing GStreamer..."; Flags: waituntilterminated
+Filename: "msiexec.exe"; Parameters: "/i ""{tmp}\gstreamer-1.0-devel-msvc-x86_64-1.22.9.msi"" /norestart"; StatusMsg: "Installing GStreamer dev..."; Flags: waituntilterminated
+
 Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent
+
+
