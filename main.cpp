@@ -170,11 +170,15 @@ VideoCapture set_cap(string camera, string codec, int width, int height) {
     return VideoCapture(gst_str, CAP_GSTREAMER);
 }
 
-VideoCapture set_cap_high(string camera, string codec) {
+VideoCapture set_cap_normal(string camera, string codec) {
     return set_cap(camera, codec, 640, 480);
 }
 
-void process_cameras(string camera, Mat& frame, Mat& rgb_frame, GLuint& texture, atomic<bool>& stop_threads, bool& full_screen_mode) {
+VideoCapture set_cap_high(string camera, string codec) {
+    return set_cap(camera, codec, 1920, 1080);
+}
+
+void process_cameras(string camera, Mat& frame, Mat& rgb_frame, atomic<bool>& stop_threads, bool& full_screen_mode) {
     // Using Gstreamer
     string codec = get_codec(camera);
 
@@ -185,14 +189,17 @@ void process_cameras(string camera, Mat& frame, Mat& rgb_frame, GLuint& texture,
         return;
     }
     // Uncomment this when I find a gstreamer fix and then comment fix this function over all
-    //VideoCapture cap = set_cap_high(camera, codec);  // Set up the video capture
 
+    VideoCapture cap;
 
-    // Set the resolution to 640x480 for testing without Gstreamer until I figure it out
-    VideoCapture cap = VideoCapture(camera);
+    if (full_screen_mode) {
+        cap = set_cap_high(camera, codec);
+    }
+    else {
+        cap = set_cap_normal(camera, codec);  // Set up the video capture
+    }
+
     cap.set(CAP_PROP_OPEN_TIMEOUT_MSEC, 1000); // Set timeout to 5 seconds
-    /*cap.set(CAP_PROP_FRAME_WIDTH, 640);
-    cap.set(CAP_PROP_FRAME_HEIGHT, 480);*/
 
     if (!cap.isOpened()) {
         cout << "Error: Could not open Capture. For this link: " << camera << endl;
@@ -200,6 +207,7 @@ void process_cameras(string camera, Mat& frame, Mat& rgb_frame, GLuint& texture,
     }
 
     while (!stop_threads) { // Check the flag to run this loop
+
         cap >> frame;  // Read a frame from the pipeline
 
         if (frame.empty()) {
@@ -209,24 +217,17 @@ void process_cameras(string camera, Mat& frame, Mat& rgb_frame, GLuint& texture,
             continue;
         }
 
-        if (full_screen_mode) {
-            cvtColor(frame, rgb_frame, COLOR_BGR2RGB);
-            cap.set(CAP_PROP_BUFFERSIZE, 2);
-        }
-        else {
+      
 
             // Resize the frame to 640x480 for testing without Gstreamer until I figure it out
-            resize(frame, frame, Size(640, 480), 0, 0, INTER_LINEAR);
+            //resize(frame, frame, Size(640, 480), 0, 0, INTER_LINEAR);
 
-
-            cvtColor(frame, rgb_frame, COLOR_BGR2RGB);
-            cap.set(CAP_PROP_BUFFERSIZE, 2);
-        }
+        cvtColor(frame, rgb_frame, COLOR_BGR2RGB);
+        cap.set(CAP_PROP_BUFFERSIZE, 2);
+       
     }
     cap.release();
-    //frame.release();
-    //rgb_frame.release();
-    //destroyAllWindows();
+  
 }
 
 void clear_frames(vector<Mat>& frames, vector<Mat>& rgb_frames) {
@@ -586,7 +587,7 @@ int WinMain(
                     cameras = groups[selectedGroupName];
                     if (!cameras.empty()) {
                         for (int i = 0; i < 6; ++i) {
-                            threads.push_back(thread(process_cameras, cameras[i], ref(frames[i]), ref(rgb_frames[i]), ref(textures[i]), ref(stop_threads), ref(full_screen_mode)));
+                            threads.push_back(thread(process_cameras, cameras[i], ref(frames[i]), ref(rgb_frames[i]), ref(stop_threads), ref(full_screen_mode)));
                         }
                     }
                     // These prints are for testing 
@@ -610,7 +611,7 @@ int WinMain(
 
                     // Start the camera thread for the selected camera
                     stop_threads = false;
-                    threads.push_back(thread(process_cameras, cameras[selectedCamera], ref(frames[0]), ref(rgb_frames[0]), ref(textures[0]), ref(stop_threads), ref(full_screen_mode)));
+                    threads.push_back(thread(process_cameras, cameras[selectedCamera], ref(frames[0]), ref(rgb_frames[0]), ref(stop_threads), ref(full_screen_mode)));
                     show_single_camera = false; // Ensure this only happens once
                 }
                 // Show the selected camera in full screen
