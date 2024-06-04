@@ -390,6 +390,26 @@ void fullScreen(GLFWwindow* window, int window_width, int window_height, bool& f
         show_back_button = false;
     }
 
+    if (ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_Escape)))
+    {
+        // handle ending the full screeen mode
+        full_screen_mode = false;
+        show_back_button = false;
+        stop_threads = true;
+        show_group_bar = true;
+        show_quadrants = true;
+        camera_starter = true;
+        // Ensure textures and threads are cleaned up properly
+        for (auto& th : threads) {
+            if (th.joinable()) {
+                th.join();
+            }
+        }
+        threads.clear();
+        clear_frames(frames, rgb_frames);
+        stop_threads = false;  // Reset stop_threads for further use
+    }
+
     if (show_back_button)
     {
         // Set the window position and size
