@@ -1,17 +1,22 @@
 Release mode and x64 c++17
 
+includes:
 C:\Opencv\build\install\include
 C:\Boost\boost_1_85_0
 ..\..
 ..\..\backends
 ..\libs\glfw\include
 
+libs:
 C:\Opencv\build\install\x64\vc17\lib
 C:\Boost\boost_1_85_0\stage\lib
 ..\libs\glfw\lib-vc2010-64
 
+Linker Additional Library Directories:
+\x64\vc17\lib
+..\libs\glfw\lib-vc2010-64
 
-
+Input:
 opengl32.lib
 glfw3.lib
 opencv_world490.lib
@@ -40,7 +45,7 @@ C:\Boost\boost_1_85_0\stage\lib
 C:\gstreamer\1.0\msvc_x86_64\lib\
 
 
-inputs:
+Inputs:
 opengl32.lib
 opencv_world490.lib
 opencv_core490.lib
