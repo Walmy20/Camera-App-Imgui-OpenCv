@@ -541,7 +541,7 @@ int WinMain(
 
     // Calculate the quadrant size
     int quadrant_width = window_width / 3;
-    int quadrant_height = (window_height - 30) / 2;  // Since you want to display 6 cameras, divide height by 3
+    int quadrant_height = (window_height - 30) / 2;  // Since you want to display 6 cameras, divide height by 2
 
     // Main loop
     while (!glfwWindowShouldClose(window))
