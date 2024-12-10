@@ -11,6 +11,10 @@
 ![image](https://github.com/user-attachments/assets/8ec49cd8-db47-44d9-a7c7-a6551be451c4)
 
 
+![image](https://github.com/user-attachments/assets/607fab15-af46-4f40-9418-a4f49bd38a9c)
+
+
+
 # Camera-App
 C++ Camera App using ImGui, GLFW, OpenGl3, Gstreamer and OpenCv.
 
