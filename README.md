@@ -18,4 +18,4 @@
 # Camera-App
 C++ Camera App using ImGui, GLFW, OpenGl3, Gstreamer and OpenCv.
 
-This is using Visual Studio 2022.
+This is using Visual Studio 2022. It takes a .cvs with rtsp streamer. Groups Columns are of 6 streams. Group1: 1rtsp, ... ,6rtsp.
